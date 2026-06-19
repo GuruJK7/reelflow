@@ -1,0 +1,22 @@
+# docker-compose.yml — define el worker de ReelFlow.
+# Uso LOCAL / referencia. En producción, Render construye desde worker/Dockerfile.
+# El worker funciona por POLLING: NO publica puertos (nada entrante).
+# Recursos limitados para NO ahogar la Mac durante un render.
+services:
+  reelflow_worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: reelflow_worker
+    env_file:
+      - .env.local
+    # Límites de recursos (Compose Spec):
+    cpus: "3.0"
+    mem_limit: "6g"
+    mem_reservation: "2g"
+    restart: unless-stopped
+    volumes:
+      - reelflow_work:/app/work   # scratch efímero de render
+
+volumes:
+  reelflow_work:

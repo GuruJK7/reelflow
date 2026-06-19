@@ -1,0 +1,45 @@
+# ── deps ──
+node_modules/
+**/node_modules/
+.pnp.*
+
+# ── env / secrets (NUNCA commitear) ──
+.env
+.env.local
+.env.*.local
+
+# ── build ──
+.next/
+out/
+dist/
+build/
+**/dist/
+.turbo/
+.vercel
+
+# ── python (venv local, dentro de Docker en prod) ──
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# ── remotion ──
+.remotion/
+remotion/out/
+
+# ── worker: scratch + media (no se commitea video ni modelos) ──
+worker/tmp/
+worker/work/
+worker/models/
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.wav
+*.bin
+
+# ── misc ──
+.DS_Store
+*.log
+npm-debug.log*
+coverage/
