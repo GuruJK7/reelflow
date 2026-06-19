@@ -1,0 +1,32 @@
+# Render Blueprint — worker de ReelFlow (servicio NUEVO, aislado de AutoEnvía).
+# type: worker => NO expone puertos entrantes (corre por polling).
+services:
+  - type: worker
+    name: reelflow-worker
+    runtime: docker
+    dockerfilePath: ./worker/Dockerfile
+    dockerContext: .
+    plan: standard # RAM/CPU para render de video; ajustar según volumen
+    region: ohio # us-east, co-ubicado con Supabase us-east-1
+    autoDeploy: true
+    envVars:
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: REELFLOW_UPLOADS_BUCKET
+        value: reelflow_uploads
+      - key: REELFLOW_OUTPUTS_BUCKET
+        value: reelflow_outputs
+      - key: REELFLOW_WHISPER_MODEL
+        value: medium
+      - key: REELFLOW_WHISPER_LANG
+        value: es
+      - key: REELFLOW_TIGHT_MARGIN
+        value: 0.2s
+      - key: REELFLOW_AI_MODEL
+        value: claude-haiku-4-5-20251001
+      - key: REELFLOW_WORKER_POLL_MS
+        value: "5000"

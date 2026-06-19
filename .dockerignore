@@ -1,0 +1,14 @@
+# El worker no necesita el frontend ni artefactos locales.
+**/node_modules
+**/dist
+**/.next
+**/out
+**/work
+**/.remotion
+.git
+web
+*.log
+**/.env
+**/.env.local
+**/.env.*.local
+**/.DS_Store
