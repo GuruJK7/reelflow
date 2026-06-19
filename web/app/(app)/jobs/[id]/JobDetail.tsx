@@ -13,14 +13,18 @@ export function JobDetail({ initialJob }: { initialJob: ReelflowJob }) {
   // Polling mientras el job está activo
   useEffect(() => {
     if (job.status === "done" || job.status === "error") return;
+    let cancelled = false;
     const t = setInterval(async () => {
       const res = await fetch(`/api/jobs/${job.id}`);
-      if (res.ok) {
+      if (res.ok && !cancelled) {
         const data = (await res.json()) as { job: ReelflowJob };
         setJob(data.job);
       }
     }, 3000);
-    return () => clearInterval(t);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
   }, [job.id, job.status]);
 
   // Cuando está listo, pedir URL firmada del resultado
@@ -75,7 +79,13 @@ export function JobDetail({ initialJob }: { initialJob: ReelflowJob }) {
         <div className="mt-8 space-y-6">
           <div className="overflow-hidden rounded-xl border border-reelflow-border bg-black">
             {url ? (
-              <video src={url} controls playsInline className="mx-auto max-h-[70vh]" />
+              <video
+                src={url}
+                controls
+                playsInline
+                aria-label="Reel generado"
+                className="mx-auto max-h-[70vh]"
+              />
             ) : (
               <div className="p-12 text-center text-reelflow-muted">Cargando preview…</div>
             )}

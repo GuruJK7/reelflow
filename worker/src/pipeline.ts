@@ -3,7 +3,7 @@ import { mkdir, rm } from "node:fs/promises";
 import { env } from "./env.js";
 import { log } from "./log.js";
 import { updateJob, setProgress } from "./db.js";
-import { downloadInput, uploadOutput } from "./storage.js";
+import { downloadInput, uploadOutput, deleteInput } from "./storage.js";
 import { probeDurationSeconds } from "./ffmpeg.js";
 import { trimSilences } from "./steps/autoeditor.js";
 import { transcribeToCaptions } from "./steps/transcribe.js";
@@ -11,7 +11,16 @@ import { generateCopy } from "./steps/copy.js";
 import { renderReel } from "./steps/render.js";
 import type { Job } from "./types.js";
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function processJob(job: Job): Promise<void> {
+  // Defensa: id/user_id deben ser UUID (vienen de la DB) antes de usarlos en paths.
+  if (!UUID_RE.test(job.id) || !UUID_RE.test(job.user_id)) {
+    await updateJob(job.id, { status: "error", error: "Job inválido." }).catch(() => {});
+    return;
+  }
+
   const workDir = path.join(env.workRoot, job.id);
   await mkdir(workDir, { recursive: true });
   try {
@@ -28,7 +37,13 @@ export async function processJob(job: Job): Promise<void> {
     log.info(`[${job.id}] 2/5 auto-editor (silencios)`);
     await trimSilences(raw, tight);
     await setProgress(job.id, 30);
+
     const duration = await probeDurationSeconds(tight);
+    if (duration > env.maxDurationSeconds) {
+      throw new Error(
+        `El video supera el máximo de ${Math.round(env.maxDurationSeconds / 60)} minutos.`,
+      );
+    }
 
     log.info(`[${job.id}] 3/5 whisper (subtítulos)`);
     const captions = await transcribeToCaptions(tight, workDir);
@@ -57,6 +72,9 @@ export async function processJob(job: Job): Promise<void> {
     log.info(`[${job.id}] subiendo resultado`);
     await uploadOutput(outPath, finalFile);
 
+    // El crudo ya no se necesita: liberar storage.
+    await deleteInput(job.input_path).catch(() => {});
+
     const result: Record<string, unknown> = {
       ...(copy ?? {}),
       duration_out: duration,
@@ -70,11 +88,15 @@ export async function processJob(job: Job): Promise<void> {
     });
     log.info(`[${job.id}] ✓ done`);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    log.error(`[${job.id}] ✗ ${message}`);
+    const detail = err instanceof Error ? err.message : String(err);
+    log.error(`[${job.id}] ✗ ${detail}`); // el detalle queda solo en logs internos
+    // Al usuario: mensajes "de negocio" tal cual; el resto, genérico (no filtrar infra).
+    const userMessage = detail.startsWith("El video")
+      ? detail
+      : "No se pudo procesar el video. Probá con otro archivo o contactá soporte.";
     await updateJob(job.id, {
       status: "error",
-      error: message,
+      error: userMessage,
       finished_at: new Date().toISOString(),
     }).catch(() => {});
   } finally {

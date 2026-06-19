@@ -50,6 +50,14 @@ Usuario (signup + Stripe) ─▶ Next.js 14 (Vercel)
 6. Stripe (suscripción + webhooks + límites por plan)
 7. Deploy (Vercel + Render) + smoke test end-to-end
 
+## Seguridad y operación
+- **Multi-tenant:** RLS por `user_id` en jobs, suscripciones y Storage; `service_role` solo server-side (worker + webhooks).
+- **Límites de abuso:** upload máx. 1 GB y MIME restringido (en el bucket), duración máx. 10 min (worker), gating por cuota mensual (sin contar errores).
+- **Resiliencia:** reaper de jobs colgados (`reelflow_reap_stale_jobs`, 30 min). Escalado: correr más instancias del worker (claim atómico `FOR UPDATE SKIP LOCKED`).
+- **Storage:** el crudo se borra tras procesar; borrar un job borra sus objetos.
+- **HTTP/seguridad:** security headers, validación de `next` (anti open-redirect), worker bindeado a `127.0.0.1`, Next 14.2.35 (CVE de middleware corregido).
+- **Pendiente (hardening futuro):** rate limiting (Upstash), cuota check+insert atómico, dedupe de webhooks por `event.id`, observabilidad (Sentry), upgrade mayor a Next 15/16.
+
 ## Desarrollo (local)
 ```bash
 npm install                 # instala workspaces (local, no global)

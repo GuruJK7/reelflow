@@ -8,22 +8,25 @@ import { Progress } from "@/components/Progress";
 
 export function JobsList({ initialJobs }: { initialJobs: ReelflowJob[] }) {
   const [jobs, setJobs] = useState<ReelflowJob[]>(initialJobs);
+  const hasActive = jobs.some(
+    (j) => j.status === "pending" || j.status === "processing",
+  );
 
   useEffect(() => {
-    const hasActive = jobs.some(
-      (j) => j.status === "pending" || j.status === "processing",
-    );
     if (!hasActive) return;
-
+    let cancelled = false;
     const t = setInterval(async () => {
       const res = await fetch("/api/jobs");
-      if (res.ok) {
+      if (res.ok && !cancelled) {
         const data = (await res.json()) as { jobs: ReelflowJob[] };
         setJobs(data.jobs);
       }
     }, 4000);
-    return () => clearInterval(t);
-  }, [jobs]);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [hasActive]);
 
   return (
     <ul className="space-y-3">

@@ -36,10 +36,12 @@ export async function checkQuota(): Promise<{
   start.setUTCHours(0, 0, 0, 0);
 
   // RLS limita el conteo a los jobs del propio usuario.
+  // No contamos jobs en error (no consumieron un Reel útil).
   const { count } = await supabase
     .from("reelflow_jobs")
     .select("id", { count: "exact", head: true })
-    .gte("created_at", start.toISOString());
+    .gte("created_at", start.toISOString())
+    .neq("status", "error");
 
   const used = count ?? 0;
   return { ok: used < quota, used, quota, plan };

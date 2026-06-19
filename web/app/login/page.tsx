@@ -57,6 +57,7 @@ export default function LoginPage() {
         <input
           type="email"
           required
+          aria-label="Email"
           placeholder="tu@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -66,6 +67,7 @@ export default function LoginPage() {
           type="password"
           required
           minLength={6}
+          aria-label="Contraseña"
           placeholder="Contraseña (mín. 6)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

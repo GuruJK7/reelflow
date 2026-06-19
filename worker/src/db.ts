@@ -22,3 +22,12 @@ export async function updateJob(id: string, patch: Partial<Job>): Promise<void> 
 export async function setProgress(id: string, progress: number): Promise<void> {
   await updateJob(id, { progress });
 }
+
+/** Marca como error los jobs 'processing' colgados hace más de maxMinutes. */
+export async function reapStaleJobs(maxMinutes: number): Promise<number> {
+  const { data, error } = await supabase.rpc("reelflow_reap_stale_jobs", {
+    max_minutes: maxMinutes,
+  });
+  if (error) throw new Error(`reap_stale_jobs: ${error.message}`);
+  return (data as number | null) ?? 0;
+}

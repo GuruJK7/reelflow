@@ -34,7 +34,7 @@ export async function renderReel(input: RenderInput): Promise<void> {
   });
   const port = await new Promise<number>((resolve, reject) => {
     server.on("error", reject);
-    server.listen(0, () => {
+    server.listen(0, "127.0.0.1", () => {
       const addr = server.address();
       if (addr && typeof addr === "object") resolve(addr.port);
       else reject(new Error("No se pudo abrir el servidor local de assets"));

@@ -22,13 +22,17 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const s = event.data.object as Stripe.Checkout.Session;
-      const userId = s.metadata?.user_id;
-      const plan = s.metadata?.plan ?? "starter";
-      if (userId) {
-        await admin.from("reelflow_subscriptions").upsert({
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const s = event.data.object as Stripe.Checkout.Session;
+        const userId = s.metadata?.user_id;
+        const plan = s.metadata?.plan;
+        if (!userId || !plan) {
+          console.error(`[webhook] ${event.type} sin user_id/plan (${event.id})`);
+          break;
+        }
+        const { error } = await admin.from("reelflow_subscriptions").upsert({
           user_id: userId,
           stripe_customer_id: typeof s.customer === "string" ? s.customer : null,
           stripe_subscription_id:
@@ -36,35 +40,51 @@ export async function POST(request: Request) {
           plan,
           status: "active",
         });
+        if (error) {
+          console.error(`[webhook] upsert falló: ${error.message}`);
+          return NextResponse.json({ error: "db" }, { status: 500 });
+        }
+        break;
       }
-      break;
-    }
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted": {
-      const sub = event.data.object as Stripe.Subscription;
-      const userId = sub.metadata?.user_id;
-      const status =
-        event.type === "customer.subscription.deleted"
-          ? "canceled"
-          : mapStatus(sub.status);
-      const plan = sub.metadata?.plan;
-      if (userId) {
-        await admin
-          .from("reelflow_subscriptions")
-          .update({
-            status,
-            ...(plan ? { plan } : {}),
-            stripe_subscription_id: sub.id,
-            current_period_end: sub.current_period_end
-              ? new Date(sub.current_period_end * 1000).toISOString()
-              : null,
-          })
-          .eq("user_id", userId);
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        const userId = sub.metadata?.user_id;
+        if (!userId) {
+          console.error(`[webhook] ${event.type} sin user_id (${event.id})`);
+          break;
+        }
+        const status =
+          event.type === "customer.subscription.deleted"
+            ? "canceled"
+            : mapStatus(sub.status);
+        const plan = sub.metadata?.plan;
+        const { error } = await admin.from("reelflow_subscriptions").upsert({
+          user_id: userId,
+          ...(plan ? { plan } : {}),
+          status,
+          stripe_customer_id:
+            typeof sub.customer === "string" ? sub.customer : null,
+          stripe_subscription_id: sub.id,
+          current_period_end: sub.current_period_end
+            ? new Date(sub.current_period_end * 1000).toISOString()
+            : null,
+        });
+        if (error) {
+          console.error(`[webhook] upsert falló: ${error.message}`);
+          return NextResponse.json({ error: "db" }, { status: 500 });
+        }
+        break;
       }
-      break;
+      default:
+        break;
     }
-    default:
-      break;
+  } catch (err) {
+    console.error(
+      `[webhook] handler error: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return NextResponse.json({ error: "handler" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

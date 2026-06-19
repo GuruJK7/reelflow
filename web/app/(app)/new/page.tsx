@@ -11,6 +11,7 @@ import {
   type ReelFormat,
 } from "@/lib/format";
 import { Progress } from "@/components/Progress";
+import { UPLOADS_BUCKET, MAX_UPLOAD_BYTES } from "@/lib/buckets";
 
 export default function NewReelPage() {
   const router = useRouter();
@@ -29,6 +30,10 @@ export default function NewReelPage() {
     if (!f) return;
     if (!f.type.startsWith("video/")) {
       setError("El archivo debe ser un video.");
+      return;
+    }
+    if (f.size > MAX_UPLOAD_BYTES) {
+      setError("El video supera el máximo de 1 GB.");
       return;
     }
     setError(null);
@@ -50,7 +55,9 @@ export default function NewReelPage() {
         router.push("/login");
         return;
       }
-      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
+      const ext = file.name.includes(".")
+        ? (file.name.split(".").pop() || "mp4").toLowerCase()
+        : "mp4";
       const objectName = `${user.id}/${crypto.randomUUID()}/raw.${ext}`;
 
       setStage("uploading");
@@ -58,7 +65,7 @@ export default function NewReelPage() {
       await uploadVideoResumable({
         file,
         objectName,
-        bucket: "reelflow_uploads",
+        bucket: UPLOADS_BUCKET,
         onProgress: setProgress,
       });
 
@@ -97,6 +104,15 @@ export default function NewReelPage() {
           pick(e.dataTransfer.files?.[0] ?? null);
         }}
         onClick={() => inputRef.current?.click()}
+        role="button"
+        tabIndex={0}
+        aria-label="Seleccionar video"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
           dragOver ? "border-reelflow-accent bg-reelflow-accent/5" : "border-reelflow-border"
         }`}

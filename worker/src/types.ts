@@ -1,6 +1,8 @@
-export type JobStatus = "pending" | "processing" | "done" | "error";
+import type { ReelFormat } from "./formats.js";
 
-export type ReelFormat = "9:16" | "1:1" | "4:5" | "16:9";
+export type { ReelFormat };
+
+export type JobStatus = "pending" | "processing" | "done" | "error";
 
 export interface Job {
   id: string;

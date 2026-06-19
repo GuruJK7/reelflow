@@ -15,7 +15,8 @@ export async function probeDurationSeconds(file: string): Promise<number> {
     file,
   ]);
   const d = parseFloat(stdout.trim());
-  if (!Number.isFinite(d)) throw new Error("No se pudo leer la duración del video");
+  if (!Number.isFinite(d) || d <= 0)
+    throw new Error("No se pudo leer la duración del video");
   return d;
 }
 

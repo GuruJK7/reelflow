@@ -142,13 +142,20 @@ grant execute on function public.reelflow_claim_job() to service_role;
 -- Storage: buckets privados + políticas por carpeta de usuario.
 -- Convención de rutas:  {user_id}/{job_id}/<archivo>
 -- ---------------------------------------------------------------------
-insert into storage.buckets (id, name, public)
-values ('reelflow_uploads', 'reelflow_uploads', false)
-on conflict (id) do nothing;
+-- Límites en el bucket (defensa real: el upload va directo del browser al Storage)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('reelflow_uploads', 'reelflow_uploads', false, 1073741824,
+        array['video/mp4','video/quicktime','video/webm','video/x-matroska','video/x-msvideo'])
+on conflict (id) do update
+  set file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
 
-insert into storage.buckets (id, name, public)
-values ('reelflow_outputs', 'reelflow_outputs', false)
-on conflict (id) do nothing;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('reelflow_outputs', 'reelflow_outputs', false, 2147483648,
+        array['video/mp4'])
+on conflict (id) do update
+  set file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
 
 -- Subidas: el usuario solo escribe/lee dentro de su propia carpeta en uploads
 drop policy if exists reelflow_uploads_insert_own on storage.objects;

@@ -24,6 +24,8 @@ export const env = {
   uploadsBucket: opt("REELFLOW_UPLOADS_BUCKET", "reelflow_uploads"),
   outputsBucket: opt("REELFLOW_OUTPUTS_BUCKET", "reelflow_outputs"),
   pollMs: Number(opt("REELFLOW_WORKER_POLL_MS", "5000")),
+  staleMinutes: Number(opt("REELFLOW_STALE_MINUTES", "30")),
+  maxDurationSeconds: Number(opt("REELFLOW_MAX_DURATION_SECONDS", "600")),
   margin: opt("REELFLOW_TIGHT_MARGIN", "0.2s"),
   whisperModel: opt("REELFLOW_WHISPER_MODEL", "medium"),
   whisperLang: opt("REELFLOW_WHISPER_LANG", "es"),

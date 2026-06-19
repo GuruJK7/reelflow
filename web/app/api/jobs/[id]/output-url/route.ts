@@ -21,7 +21,11 @@ export async function GET(
     .single();
 
   if (!job?.output_path) {
-    return NextResponse.json({ error: "Sin salida disponible" }, { status: 404 });
+    const msg =
+      job?.status === "error"
+        ? "El job terminó con error"
+        : "El Reel todavía no está listo";
+    return NextResponse.json({ error: msg }, { status: 404 });
   }
 
   const { data, error } = await supabase.storage
