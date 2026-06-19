@@ -16,6 +16,8 @@ build/
 **/dist/
 .turbo/
 .vercel
+next-env.d.ts
+*.tsbuildinfo
 
 # ── python (venv local, dentro de Docker en prod) ──
 .venv/
