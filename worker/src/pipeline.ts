@@ -72,9 +72,6 @@ export async function processJob(job: Job): Promise<void> {
     log.info(`[${job.id}] subiendo resultado`);
     await uploadOutput(outPath, finalFile);
 
-    // El crudo ya no se necesita: liberar storage.
-    await deleteInput(job.input_path).catch(() => {});
-
     const result: Record<string, unknown> = {
       ...(copy ?? {}),
       duration_out: duration,
@@ -86,6 +83,10 @@ export async function processJob(job: Job): Promise<void> {
       finished_at: new Date().toISOString(),
       result,
     });
+
+    // El crudo se borra SOLO tras confirmar 'done' (si el cierre fallara, el
+    // input queda intacto para reintentar en vez de perderse).
+    await deleteInput(job.input_path).catch(() => {});
     log.info(`[${job.id}] ✓ done`);
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);

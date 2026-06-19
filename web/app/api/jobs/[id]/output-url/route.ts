@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { OUTPUTS_BUCKET } from "@/lib/buckets";
 import { NextResponse } from "next/server";
-
-const OUTPUTS_BUCKET = process.env.REELFLOW_OUTPUTS_BUCKET || "reelflow_outputs";
 
 /** Devuelve una URL firmada (1h) para previsualizar/descargar el resultado. */
 export async function GET(

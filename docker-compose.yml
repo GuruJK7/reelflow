@@ -5,8 +5,8 @@
 services:
   reelflow_worker:
     build:
-      context: ./worker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: worker/Dockerfile
     container_name: reelflow_worker
     env_file:
       - .env.local

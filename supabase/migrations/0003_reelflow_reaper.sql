@@ -19,8 +19,7 @@ begin
          error = 'El procesamiento excedió el tiempo máximo (worker reiniciado o video muy pesado).',
          finished_at = now()
    where status = 'processing'
-     and started_at is not null
-     and started_at < now() - make_interval(mins => max_minutes);
+     and updated_at < now() - make_interval(mins => max_minutes);
   get diagnostics affected = row_count;
   return affected;
 end;

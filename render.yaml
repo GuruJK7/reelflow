@@ -30,3 +30,7 @@ services:
         value: claude-haiku-4-5-20251001
       - key: REELFLOW_WORKER_POLL_MS
         value: "5000"
+      - key: REELFLOW_STALE_MINUTES
+        value: "30"
+      - key: REELFLOW_MAX_DURATION_SECONDS
+        value: "600"
